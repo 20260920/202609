@@ -1,244 +1,238 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>알바비 계산기 (연장·야간·휴일 가산 포함)</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
-      background: #f0f4f8;
-      color: #222;
-      line-height: 1.5;
-      padding: 20px;
-    }
-    .container {
-      max-width: 480px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      overflow: hidden;
-    }
-    header {
-      background: #1a73e8;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-    header h1 { font-size: 1.4rem; margin-bottom: 4px; }
-    header p { font-size: 0.85rem; opacity: 0.9; }
-    .form {
-      padding: 24px;
-    }
-    .field {
-      margin-bottom: 18px;
-    }
-    label {
-      display: block;
-      font-size: 0.9rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #444;
-    }
-    input, select {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: border 0.2s;
-    }
-    input:focus, select:focus {
-      outline: none;
-      border-color: #1a73e8;
-    }
-    .row {
-      display: flex;
-      gap: 12px;
-    }
-    .row .field { flex: 1; }
-    .btn {
-      width: 100%;
-      padding: 14px;
-      background: #1a73e8;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1.05rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-    .btn:hover { background: #1557b0; }
-    .result {
-      margin-top: 24px;
-      padding: 20px;
-      background: #f8fafc;
-      border-radius: 12px;
-      display: none;
-    }
-    .result.show { display: block; }
-    .result h2 {
-      font-size: 1.1rem;
-      margin-bottom: 12px;
-      color: #1a73e8;
-    }
-    .result-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
-      font-size: 0.95rem;
-    }
-    .result-item:last-child { border-bottom: none; }
-    .result-item.total {
-      font-weight: 700;
-      font-size: 1.15rem;
-      color: #1a73e8;
-      margin-top: 8px;
-      padding-top: 12px;
-      border-top: 2px solid #1a73e8;
-    }
-    .note {
-      margin-top: 16px;
-      font-size: 0.8rem;
-      color: #666;
-      line-height: 1.4;
-    }
-  </style>
+<meta charset="utf-8">
+<title>알바비 계산기 - 체크박스 및 안내 적용</title>
+<style>
+body{font-family:sans-serif;background:#f4f6f9;display:flex;justify-content:center;padding:20px;margin:0}
+.card{background:#fff;width:100%;max-width:420px;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1);box-sizing:border-box}
+.header{background:#2563eb;color:#fff;padding:15px;border-radius:8px;text-align:center;margin-bottom:20px}
+.group{margin-bottom:15px}
+label{display:block;font-size:13px;color:#4b5563;margin-bottom:5px;font-weight:600}
+input, select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-size:14px}
+/* 체크박스 전용 스타일 */
+.chk-group{display:flex;align-items:center;gap:8px;background:#eff6ff;padding:12px;border-radius:8px;border:1px solid #bfdbfe;margin-bottom:15px}
+.chk-group input[type="checkbox"]{width:18px;height:18px;cursor:pointer;margin:0}
+.chk-group label{margin:0;font-size:14px;color:#1e40af;cursor:pointer;user-select:none}
+
+button{width:100%;background:#2563eb;color:#fff;border:none;padding:12px;border-radius:6px;font-weight:700;cursor:pointer;margin-top:10px;font-size:14px}
+button:hover{background:#1d4ed8}
+.btn-secondary{background:#4b5563;margin-top:5px}
+.btn-secondary:hover{background:#374151}
+.btn-danger{background:#dc2626;padding:5px 10px;width:auto;margin-top:0;font-size:12px}
+.btn-danger:hover{background:#b91c1c}
+
+/* 휴게시간 리스트 스타일 */
+.break-item{display:flex;justify-content:space-between;align-items:center;background:#f3f4f6;padding:8px 12px;border-radius:6px;margin-bottom:5px;font-size:13px;color:#374151}
+
+/* 모달 팝업 스타일 */
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:1000}
+.modal-content{background:#fff;padding:20px;border-radius:10px;width:90%;max-width:350px;box-shadow:0 4px 15px rgba(0,0,0,0.2)}
+.modal-buttons{display:flex;gap:10px;margin-top:15px}
+
+/* 안내 박스 스타일 */
+.notice-box{background:#fffbeb;border:1px solid #fde68a;padding:12px;border-radius:8px;margin-bottom:15px;font-size:13px;color:#92400e;line-height:1.4;}
+
+/* 결과창 스타일 */
+.res{margin-top:20px;background:#f9fafb;padding:15px;border-radius:8px;border:1px solid #e5e7eb}
+.row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px}
+.tot{border-top:2px solid #2563eb;margin-top:10px;padding-top:10px;font-weight:700;font-size:16px;color:#1e3a8a}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>알바비 계산기</h1>
-      <p>연장 · 야간 · 휴일 가산수당 자동 적용</p>
-    </header>
 
-    <div class="form">
-      <div class="field">
-        <label for="hourly">시급 (원)</label>
-        <input type="number" id="hourly" placeholder="예: 10320" value="10320">
-      </div>
-
-      <div class="row">
-        <div class="field">
-          <label for="start">출근 시간</label>
-          <input type="time" id="start" value="17:00">
-        </div>
-        <div class="field">
-          <label for="end">퇴근 시간</label>
-          <input type="time" id="end" value="08:00">
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="break">무급 휴게시간 (분)</label>
-        <input type="number" id="break" placeholder="예: 60" value="60">
-      </div>
-
-      <div class="field">
-        <label for="dayType">근무 요일 유형</label>
-        <select id="dayType">
-          <option value="weekday">평일 / 토요일</option>
-          <option value="holiday">일요일 / 공휴일</option>
-        </select>
-      </div>
-
-      <button class="btn" onclick="calculate()">계산하기</button>
-
-      <div class="result" id="result">
-        <h2>계산 결과</h2>
-        <div id="details"></div>
-        <div class="note">
-          ※ 연장: 1일 8시간 초과분 +50%<br>
-          ※ 야간: 22:00~06:00 +50%<br>
-          ※ 휴일: 일요일·공휴일 +50% (8시간 초과 시 +100%)<br>
-          ※ 가산은 중복 적용됩니다.<br>
-          ※ 자정을 넘는 근무도 자동 처리됩니다.
-        </div>
-      </div>
+<div class="card">
+    <div class="header">
+        <h2>알바비 계산기</h2>
+        <div style="font-size:12px;opacity:.9">연장·야간 가산수당 맞춤형 적용</div>
     </div>
-  </div>
+    
+    <div class="chk-group">
+        <input type="checkbox" id="company_size_chk" checked>
+        <label for="company_size_chk">상시 근로자 5인 이상 사업장 (가산수당 적용)</label>
+    </div>
 
-  <script>
-    function parseTime(timeStr) {
-      const [h, m] = timeStr.split(':').map(Number);
-      return h * 60 + m;
-    }
-
-    function calculate() {
-      const hourly = Number(document.getElementById('hourly').value) || 0;
-      const startMin = parseTime(document.getElementById('start').value);
-      let endMin = parseTime(document.getElementById('end').value);
-      const breakMin = Number(document.getElementById('break').value) || 0;
-      const dayType = document.getElementById('dayType').value;
-
-      // 다음날로 넘어가는 경우 처리
-      if (endMin <= startMin) endMin += 24 * 60;
-
-      const totalClockMin = endMin - startMin;
-      const workMin = totalClockMin - breakMin;
-      if (workMin <= 0) {
-        alert('실근로시간이 0 이하입니다. 휴게시간을 확인하세요.');
-        return;
-      }
-
-      const workHours = workMin / 60;
-
-      // 야간 시간 계산 (22:00 ~ 06:00)
-      let nightHours = 0;
-      for (let m = startMin; m < endMin; m++) {
-        const mod = ((m % (24 * 60)) + 24 * 60) % (24 * 60);
-        if (mod >= 22 * 60 || mod < 6 * 60) {
-          nightHours += 1 / 60;
-        }
-      }
-      // 휴게 시간에 야간이 포함된 경우를 단순 보정
-      nightHours = Math.max(0, nightHours - (breakMin / 60) * 0.4);
-
-      let totalPay = 0;
-      let detail = '';
-
-      if (dayType === 'weekday') {
-        // 평일 / 토요일
-        const baseHours = Math.min(workHours, 8);
-        const otHours = Math.max(workHours - 8, 0);
-
-        totalPay = (baseHours * 1.0 + otHours * 1.5) * hourly;
-        totalPay += nightHours * 0.5 * hourly;
-
-        detail = `
-          <div class="result-item"><span>기본 근로 (${baseHours.toFixed(1)}시간)</span><span>${Math.round(baseHours * hourly).toLocaleString()}원</span></div>
-          <div class="result-item"><span>연장 근로 (${otHours.toFixed(1)}시간 × 1.5)</span><span>${Math.round(otHours * 1.5 * hourly).toLocaleString()}원</span></div>
-          <div class="result-item"><span>야간 가산 (${nightHours.toFixed(1)}시간 × 0.5)</span><span>${Math.round(nightHours * 0.5 * hourly).toLocaleString()}원</span></div>
-        `;
-      } else {
-        // 일요일 / 공휴일
-        const holidayBase = Math.min(workHours, 8);
-        const holidayOt = Math.max(workHours - 8, 0);
-
-        totalPay = (holidayBase * 1.5 + holidayOt * 2.0) * hourly;
-        totalPay += nightHours * 0.5 * hourly;
-
-        detail = `
-          <div class="result-item"><span>휴일 근로 8시간 이내 (${holidayBase.toFixed(1)}시간 × 1.5)</span><span>${Math.round(holidayBase * 1.5 * hourly).toLocaleString()}원</span></div>
-          <div class="result-item"><span>휴일 연장 (${holidayOt.toFixed(1)}시간 × 2.0)</span><span>${Math.round(holidayOt * 2.0 * hourly).toLocaleString()}원</span></div>
-          <div class="result-item"><span>야간 가산 (${nightHours.toFixed(1)}시간 × 0.5)</span><span>${Math.round(nightHours * 0.5 * hourly).toLocaleString()}원</span></div>
-        `;
-      }
-
-      document.getElementById('details').innerHTML = detail + `
-        <div class="result-item total">
-          <span>총 지급액</span>
-          <span>${Math.round(totalPay).toLocaleString()}원</span>
+    <div class="group">
+        <label>시급 (원)</label>
+        <input type="number" id="w" value="10320">
+    </div>
+    
+    <div class="group" style="display:flex;gap:10px">
+        <div style="flex:1">
+            <label>출근 시간</label>
+            <input type="time" id="s" value="17:00">
         </div>
-        <div class="result-item"><span>실근로시간</span><span>${workHours.toFixed(1)}시간</span></div>
-      `;
+        <div style="flex:1">
+            <label>퇴근 시간</label>
+            <input type="time" id="e" value="08:00">
+        </div>
+    </div>
+    
+    <div class="group">
+        <label>무급 휴게시간 설정</label>
+        <div id="breakList" style="margin-bottom: 8px;"></div>
+        <button type="button" class="btn-secondary" onclick="openModal()">＋ 휴게시간 추가</button>
+    </div>
+    
+    <button onclick="calc()">계산하기</button>
 
-      document.getElementById('result').classList.add('show');
+    <div class="res" id="r" style="display:none">
+        <div class="notice-box">
+            ⚠️ <strong>참고사항:</strong> 본 계산기는 기본·연장·야간 수당 기준입니다. <strong>주휴수당</strong>(1주일 소정근로시간 15시간 이상 시) 및 <strong>휴일(공휴일) 근로수당</strong>은 별도 조건에 따라 추가될 수 있으므로 실제 지급액과 차이가 있을 수 있습니다.
+        </div>
+
+        <div class="row"><span id="lbl_base">기본 근로 (0시간)</span><span id="val_base">0원</span></div>
+        <div class="row"><span id="lbl_over">연장 근로 (0시간 × 1.5)</span><span id="val_over">0원</span></div>
+        <div class="row"><span id="lbl_night">야간 가산 (0시간 × 0.5)</span><span id="val_night">0원</span></div>
+        <div class="row tot"><span>총 지급액</span><span id="val_total">0원</span></div>
+    </div>
+</div>
+
+<div class="modal" id="breakModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;font-size:16px;color:#1f2937;">휴게시간 추가</h3>
+        <div class="group">
+            <label>휴게 시작 시간</label>
+            <input type="time" id="bs" value="21:00">
+        </div>
+        <div class="group">
+            <label>휴게 종료 시간</label>
+            <input type="time" id="be" value="22:00">
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-secondary" style="margin:0;" onclick="closeModal()">취소</button>
+            <button style="margin:0;" onclick="addBreak()">추가하기</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let breaks = [];
+
+function openModal() {
+    document.getElementById('breakModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('breakModal').style.display = 'none';
+}
+
+function timeToMins(t) {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+}
+
+function addBreak() {
+    const sTime = document.getElementById('bs').value;
+    const eTime = document.getElementById('be').value;
+    
+    if(!sTime || !eTime) {
+        alert('시간을 선택해 주세요.');
+        return;
     }
-  </script>
+    
+    breaks.push({ start: sTime, end: eTime });
+    renderBreaks();
+    closeModal();
+}
+
+function removeBreak(index) {
+    breaks.splice(index, 1);
+    renderBreaks();
+}
+
+function renderBreaks() {
+    const listDiv = document.getElementById('breakList');
+    listDiv.innerHTML = '';
+    
+    breaks.forEach((b, index) => {
+        const item = document.createElement('div');
+        item.className = 'break-item';
+        item.innerHTML = `
+            <span>⏳ ${b.start} ~ ${b.end}</span>
+            <button class="btn-danger" onclick="removeBreak(${index})">삭제</button>
+        `;
+        listDiv.appendChild(item);
+    });
+}
+
+function calc() {
+    const isOver5 = document.getElementById('company_size_chk').checked;
+    const wage = Number(document.getElementById('w').value);
+    const startMins = timeToMins(document.getElementById('s').value);
+    let endMins = timeToMins(document.getElementById('e').value);
+
+    if (endMins <= startMins) {
+        endMins += 24 * 60;
+    }
+
+    let totalBaseWorkMins = 0;
+    let totalOverWorkMins = 0;
+    let totalNightWorkMins = 0;
+
+    for (let m = startMins; m < endMins; m++) {
+        let isBreak = false;
+        for (let b of breaks) {
+            let bStart = timeToMins(b.start);
+            let bEnd = timeToMins(b.end);
+            
+            if (bEnd <= bStart) bEnd += 24 * 60;
+            
+            if (bStart < startMins && bEnd <= startMins) {
+                bStart += 24 * 60;
+                bEnd += 24 * 60;
+            } else if (bStart < startMins && bEnd > startMins) {
+                if(m < bEnd) { bStart = startMins; }
+                else { bStart += 24 * 60; bEnd += 24 * 60; }
+            }
+
+            if (m >= bStart && m < bEnd) {
+                isBreak = true;
+                break;
+            }
+        }
+
+        if (isBreak) continue;
+
+        let workedSoFar = totalBaseWorkMins + totalOverWorkMins;
+
+        if (workedSoFar < 480) {
+            totalBaseWorkMins++;
+        } else {
+            totalOverWorkMins++;
+        }
+
+        const currentMinsMod = m % (24 * 60);
+        if (currentMinsMod >= 22 * 60 || currentMinsMod < 6 * 60) {
+            totalNightWorkMins++;
+        }
+    }
+
+    const baseHours = totalBaseWorkMins / 60;
+    const overHours = totalOverWorkMins / 60;
+    const nightHours = totalNightWorkMins / 60;
+
+    const overRate = isOver5 ? 1.5 : 1.0;
+    const nightRate = isOver5 ? 0.5 : 0.0;
+
+    const basePay = Math.round(baseHours * wage);
+    const overPay = Math.round(overHours * wage * overRate);
+    const nightPay = Math.round(nightHours * wage * nightRate);
+    const totalPay = basePay + overPay + nightPay;
+
+    document.getElementById('lbl_base').innerText = `기본 근로 (${baseHours.toFixed(1)}시간)`;
+    document.getElementById('val_base').innerText = basePay.toLocaleString() + '원';
+
+    document.getElementById('lbl_over').innerText = `연장 근로 (${overHours.toFixed(1)}시간 × ${overRate})`;
+    document.getElementById('val_over').innerText = overPay.toLocaleString() + '원';
+
+    document.getElementById('lbl_night').innerText = `야간 가산 (${nightHours.toFixed(1)}시간 × ${nightRate})`;
+    document.getElementById('val_night').innerText = nightPay.toLocaleString() + '원';
+
+    document.getElementById('val_total').innerText = totalPay.toLocaleString() + '원';
+
+    document.getElementById('r').style.display = 'block';
+}
+</script>
 </body>
 </html>
