@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>알바비 계산기 (연장·야간·휴일 가산 포함)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      background: #f0f4f8;
+      color: #222;
+      line-height: 1.5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    header {
+      background: #1a73e8;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    header h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    header p { font-size: 0.85rem; opacity: 0.9; }
+    .form {
+      padding: 24px;
+    }
+    .field {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #444;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border 0.2s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #1a73e8;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+    }
+    .row .field { flex: 1; }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn:hover { background: #1557b0; }
+    .result {
+      margin-top: 24px;
+      padding: 20px;
+      background: #f8fafc;
+      border-radius: 12px;
+      display: none;
+    }
+    .result.show { display: block; }
+    .result h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      color: #1a73e8;
+    }
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 0.95rem;
+    }
+    .result-item:last-child { border-bottom: none; }
+    .result-item.total {
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: #1a73e8;
+      margin-top: 8px;
+      padding-top: 12px;
+      border-top: 2px solid #1a73e8;
+    }
+    .note {
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #666;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>알바비 계산기</h1>
+      <p>연장 · 야간 · 휴일 가산수당 자동 적용</p>
+    </header>
+
+    <div class="form">
+      <div class="field">
+        <label for="hourly">시급 (원)</label>
+        <input type="number" id="hourly" placeholder="예: 10320" value="10320">
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="start">출근 시간</label>
+          <input type="time" id="start" value="17:00">
+        </div>
+        <div class="field">
+          <label for="end">퇴근 시간</label>
+          <input type="time" id="end" value="08:00">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="break">무급 휴게시간 (분)</label>
+        <input type="number" id="break" placeholder="예: 60" value="60">
+      </div>
+
+      <div class="field">
+        <label for="dayType">근무 요일 유형</label>
+        <select id="dayType">
+          <option value="weekday">평일 / 토요일</option>
+          <option value="holiday">일요일 / 공휴일</option>
+        </select>
+      </div>
+
+      <button class="btn" onclick="calculate()">계산하기</button>
+
+      <div class="result" id="result">
+        <h2>계산 결과</h2>
+        <div id="details"></div>
+        <div class="note">
+          ※ 연장: 1일 8시간 초과분 +50%<br>
+          ※ 야간: 22:00~06:00 +50%<br>
+          ※ 휴일: 일요일·공휴일 +50% (8시간 초과 시 +100%)<br>
+          ※ 가산은 중복 적용됩니다.<br>
+          ※ 자정을 넘는 근무도 자동 처리됩니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function parseTime(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function calculate() {
+      const hourly = Number(document.getElementById('hourly').value) || 0;
+      const startMin = parseTime(document.getElementById('start').value);
+      let endMin = parseTime(document.getElementById('end').value);
+      const breakMin = Number(document.getElementById('break').value) || 0;
+      const dayType = document.getElementById('dayType').value;
+
+      // 다음날로 넘어가는 경우 처리
+      if (endMin <= startMin) endMin += 24 * 60;
+
+      const totalClockMin = endMin - startMin;
+      const workMin = totalClockMin - breakMin;
+      if (workMin <= 0) {
+        alert('실근로시간이 0 이하입니다. 휴게시간을 확인하세요.');
+        return;
+      }
+
+      const workHours = workMin / 60;
+
+      // 야간 시간 계산 (22:00 ~ 06:00)
+      let nightHours = 0;
+      for (let m = startMin; m < endMin; m++) {
+        const mod = ((m % (24 * 60)) + 24 * 60) % (24 * 60);
+        if (mod >= 22 * 60 || mod < 6 * 60) {
+          nightHours += 1 / 60;
+        }
+      }
+      // 휴게 시간에 야간이 포함된 경우를 단순 보정
+      nightHours = Math.max(0, nightHours - (breakMin / 60) * 0.4);
+
+      let totalPay = 0;
+      let detail = '';
+
+      if (dayType === 'weekday') {
+        // 평일 / 토요일
+        const baseHours = Math.min(workHours, 8);
+        const otHours = Math.max(workHours - 8, 0);
+
+        totalPay = (baseHours * 1.0 + otHours * 1.5) * hourly;
+        totalPay += nightHours * 0.5 * hourly;
+
+        detail = `
+          <div class="result-item"><span>기본 근로 (${baseHours.toFixed(1)}시간)</span><span>${Math.round(baseHours * hourly).toLocaleString()}원</span></div>
+          <div class="result-item"><span>연장 근로 (${otHours.toFixed(1)}시간 × 1.5)</span><span>${Math.round(otHours * 1.5 * hourly).toLocaleString()}원</span></div>
+          <div class="result-item"><span>야간 가산 (${nightHours.toFixed(1)}시간 × 0.5)</span><span>${Math.round(nightHours * 0.5 * hourly).toLocaleString()}원</span></div>
+        `;
+      } else {
+        // 일요일 / 공휴일
+        const holidayBase = Math.min(workHours, 8);
+        const holidayOt = Math.max(workHours - 8, 0);
+
+        totalPay = (holidayBase * 1.5 + holidayOt * 2.0) * hourly;
+        totalPay += nightHours * 0.5 * hourly;
+
+        detail = `
+          <div class="result-item"><span>휴일 근로 8시간 이내 (${holidayBase.toFixed(1)}시간 × 1.5)</span><span>${Math.round(holidayBase * 1.5 * hourly).toLocaleString()}원</span></div>
+          <div class="result-item"><span>휴일 연장 (${holidayOt.toFixed(1)}시간 × 2.0)</span><span>${Math.round(holidayOt * 2.0 * hourly).toLocaleString()}원</span></div>
+          <div class="result-item"><span>야간 가산 (${nightHours.toFixed(1)}시간 × 0.5)</span><span>${Math.round(nightHours * 0.5 * hourly).toLocaleString()}원</span></div>
+        `;
+      }
+
+      document.getElementById('details').innerHTML = detail + `
+        <div class="result-item total">
+          <span>총 지급액</span>
+          <span>${Math.round(totalPay).toLocaleString()}원</span>
+        </div>
+        <div class="result-item"><span>실근로시간</span><span>${workHours.toFixed(1)}시간</span></div>
+      `;
+
+      document.getElementById('result').classList.add('show');
+    }
+  </script>
+</body>
+</html>
